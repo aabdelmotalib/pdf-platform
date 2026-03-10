@@ -13,7 +13,7 @@ git pull origin main
 # Build frontend
 echo "🏗️ Building frontend..."
 cd frontend
-npm install --production
+npm install
 # VITE_API_URL=https://dblockhub.com/api npm run build
 npm run build -- --mode production
 cd ..
