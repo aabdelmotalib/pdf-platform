@@ -102,6 +102,17 @@ class Settings:
     HOURLY_PLAN_ID: int = 2
     MONTHLY_PLAN_ID: int = 3
 
+    # Paymob Configuration
+    PAYMOB_API_KEY: str = os.getenv("PAYMOB_API_KEY", "")
+    PAYMOB_HMAC_SECRET: str = os.getenv("PAYMOB_HMAC_SECRET", "")
+    PAYMOB_INTEGRATION_ID_CARD: int = int(os.getenv("PAYMOB_INTEGRATION_ID_CARD", "0"))
+    PAYMOB_INTEGRATION_ID_WALLET: int = int(os.getenv("PAYMOB_INTEGRATION_ID_WALLET", "0"))
+    PAYMOB_INTEGRATION_ID_INSTAPAY: int = int(os.getenv("PAYMOB_INTEGRATION_ID_INSTAPAY", "0"))
+    PAYMOB_INTEGRATION_ID_FAWRY: int = int(os.getenv("PAYMOB_INTEGRATION_ID_FAWRY", "0"))
+    PAYMOB_TEST_MODE: bool = os.getenv("PAYMOB_TEST_MODE", "true").lower() == "true"
+    PAYMOB_IFRAME_ID: int = int(os.getenv("PAYMOB_IFRAME_ID", "0")) # Added for URL building
+
+
 
 # Create singleton settings instance
 settings = Settings()

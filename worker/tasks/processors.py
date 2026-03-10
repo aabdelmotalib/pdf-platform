@@ -95,17 +95,55 @@ def run_libreoffice(
 
 def pdf_to_word(input_path: str, output_dir: Optional[str] = None) -> str:
     """
-    Convert PDF to DOCX using LibreOffice
-    
+    Convert PDF to DOCX using PyMuPDF (text extraction) + python-docx.
+
+    LibreOffice cannot export PDF→DOCX directly, so we extract text
+    block-by-block and write it into a Word document.
+
     Args:
         input_path: Path to input PDF
         output_dir: Output directory
-    
+
     Returns:
         Path to output DOCX file
     """
-    logger.info(f"Converting PDF to WORD: {input_path}")
-    return run_libreoffice(input_path, "docx", output_dir)
+    from docx import Document as DocxDocument
+
+    if not output_dir:
+        output_dir = tempfile.gettempdir()
+    os.makedirs(output_dir, exist_ok=True)
+
+    try:
+        logger.info(f"Converting PDF to WORD: {input_path}")
+        doc = fitz.open(input_path)
+        word_doc = DocxDocument()
+
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+
+            if page_num > 0:
+                word_doc.add_page_break()
+
+            # Extract text blocks preserving structure
+            blocks = page.get_text("blocks")
+            for block in blocks:
+                # block = (x0, y0, x1, y1, text, block_no, block_type)
+                if block[6] == 0:  # text block
+                    text = block[4].strip()
+                    if text:
+                        word_doc.add_paragraph(text)
+
+        doc.close()
+
+        output_filename = f"{Path(input_path).stem}.docx"
+        output_path = os.path.join(output_dir, output_filename)
+        word_doc.save(output_path)
+
+        logger.info(f"PDF to DOCX conversion complete: {output_path}")
+        return output_path
+
+    except Exception as e:
+        raise ConversionError(f"PDF to Word conversion failed: {str(e)}")
 
 
 def pdf_to_excel(input_path: str, output_dir: Optional[str] = None) -> str:

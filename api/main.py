@@ -28,7 +28,7 @@ except ImportError:
 
 from config import settings
 from db import close_db, init_db
-from routers import auth_router, upload_router
+from routers import admin_router, auth_router, payments_router, session_router, upload_router
 
 
 @asynccontextmanager
@@ -75,13 +75,54 @@ if has_slowapi:
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(payments_router)
+app.include_router(session_router)
 app.include_router(upload_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return JSONResponse({"status": "ok", "service": "api"})
+async def health_check(db: AsyncSession = Depends(get_db)):
+    """Enhanced health check for production monitoring."""
+    import redis as redis_lib
+    import os
+    from minio import Minio
+    from sqlalchemy import text
+    
+    health = {"api": "ok"}
+    
+    # 1. Check DB
+    try:
+        await db.execute(text("SELECT 1"))
+        health["db"] = "ok"
+    except Exception as e:
+        health["db"] = f"fail: {str(e)}"
+    
+    # 2. Check Redis
+    try:
+        r = redis_lib.Redis.from_url(os.getenv("REDIS_URL", "redis://redis:6379/0"))
+        r.ping()
+        health["redis"] = "ok"
+        health["worker_queue_depth"] = r.llen("celery")
+    except Exception as e:
+        health["redis"] = f"fail: {str(e)}"
+        health["worker_queue_depth"] = -1
+    
+    # 3. Check MinIO
+    try:
+        m = Minio(
+            os.getenv("MINIO_ENDPOINT", "minio:9000"),
+            access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
+            secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+            secure=os.getenv("MINIO_SECURE", "false").lower() == "true"
+        )
+        m.list_buckets()
+        health["minio"] = "ok"
+    except Exception as e:
+        health["minio"] = f"fail: {str(e)}"
+    
+    overall_ok = all(v == "ok" for k, v in health.items() if k != "worker_queue_depth")
+    return JSONResponse(health, status_code=200 if overall_ok else 503)
 
 
 @app.get("/api/status")

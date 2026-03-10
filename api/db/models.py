@@ -48,6 +48,7 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
+    role = Column(String(20), server_default="user", default="user", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
@@ -174,6 +175,7 @@ class Payment(Base):
     
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id = Column(PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    plan_id = Column(Integer, ForeignKey("plans.id", ondelete="RESTRICT"), nullable=False)
     amount_egp = Column(Numeric(10, 2), nullable=False)
     status = Column(String(20), default="pending", nullable=False)  # pending, completed, failed, refunded
     gateway_ref = Column(String(255), nullable=True)  # External payment gateway reference

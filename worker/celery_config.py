@@ -21,9 +21,16 @@ app.conf.update(
     result_expires=3600,
     worker_prefetch_multiplier=4,
     worker_max_tasks_per_child=1000,
-    task_default_queue="default",
+    task_default_queue="celery",
     # Disable autodiscovery to prevent import errors
     autodiscover_ignore_patterns=["*/migrations/*"],
+    # Celery Beat schedule — periodic maintenance
+    beat_schedule={
+        "expire-hourly-subscriptions": {
+            "task": "tasks.maintenance.expire_subscriptions",
+            "schedule": 300.0,  # Every 5 minutes
+        },
+    },
 )
 
 # Explicitly disable autodiscovery
@@ -33,9 +40,10 @@ app.autodiscovered = True
 # Must be after app.conf.update() to avoid circular imports
 try:
     from tasks import convert  # noqa: F401
+    from tasks import maintenance  # noqa: F401
     import logging
-    logging.info("✅ Successfully imported tasks.convert")
+    logging.info("✅ Successfully imported tasks.convert + tasks.maintenance")
 except ImportError as e:
     import logging
-    logging.error(f"❌ Could not import tasks.convert: {e}", exc_info=True)
+    logging.error(f"❌ Could not import tasks: {e}", exc_info=True)
 

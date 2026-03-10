@@ -305,9 +305,62 @@ class JobStatusResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SessionStatusResponse(BaseModel):
+    """Session timer status response for hourly/monthly plans."""
+
+    is_active: bool = Field(description="Whether the session/plan is currently active")
+    remaining_seconds: int = Field(description="Seconds left (-1 = unlimited, 0 = expired)")
+    files_used: int = Field(description="Files used in current session")
+    files_allowed: int = Field(description="Max files allowed (-1 = unlimited)")
+    plan_name: str = Field(description="Plan name: hourly, monthly, free, none")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class FileValidationError(BaseModel):
     """File validation error response."""
     
     error: str
     detail: str
     code: str
+
+
+# ---------------------------------------------------------------------------
+# Payment Schemas
+# ---------------------------------------------------------------------------
+
+class PaymentInitiateRequest(BaseModel):
+    """Request to initiate a payment."""
+    plan_id: int = Field(..., description="ID of the plan to subscribe to")
+    method: str = Field(..., description="Payment method: card, wallet, instapay, fawry")
+
+
+class PaymentResponse(BaseModel):
+    """Response after initiating a payment."""
+    payment_url: str = Field(..., description="URL to redirect user for payment")
+    payment_key: str = Field(..., description="Paymob payment key")
+    payment_id: UUID = Field(..., description="Internal payment record ID")
+    order_id: int = Field(..., description="Paymob order ID")
+
+
+class PaymentHistoryItem(BaseModel):
+    """A single payment record in history."""
+    id: UUID
+    amount_egp: float
+    status: str
+    payment_method: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PaymentHistoryResponse(BaseModel):
+    """List of payment history items."""
+    payments: list[PaymentHistoryItem]
+
+
+class PaymentStatusResponse(BaseModel):
+    """Current status of a single payment."""
+    id: UUID
+    status: str
+    amount_egp: float
