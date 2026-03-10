@@ -1,0 +1,63 @@
+
+# Development overrides for docker-compose.yml
+# This file extends the base docker-compose.yml with development-specific settings
+
+services:
+  api:
+    # Enable reload on code changes
+    environment:
+      - RELOAD=true
+    # Volume mounts for hot reload
+    volumes:
+      - ./api:/app
+      - /app/__pycache__
+    # Use development command
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    # Link ports directly
+    ports:
+      - "8000:8000"
+
+  worker:
+    # Volume mounts for hot reload
+    volumes:
+      - ./worker:/app
+      - /app/__pycache__
+    # Enable debug logging
+    environment:
+      - LOG_LEVEL=debug
+    # Link ports for debugging
+    ports:
+      - "5678:5678"  # Python debugger port
+
+  nginx:
+    # Enable debug logging
+    environment:
+      - NGINX_DEBUG=true
+
+  postgres:
+    # Expose port for local tools
+    ports:
+      - "5432:5432"
+    # Add pgAdmin for convenient database management (optional)
+    # Can access at http://localhost:5050
+
+  redis:
+    # Expose port for Redis CLI
+    ports:
+      - "6379:6379"
+
+  minio:
+    # Expose both API and console ports
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  clamav:
+    # Expose ClamAV port
+    ports:
+      - "3310:3310"
+
+  flower:
+    # Expose Flower port
+    ports:
+      - "5555:5555"

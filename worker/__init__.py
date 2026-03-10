@@ -1,0 +1,1 @@
+"""PDF Platform Celery Worker"""
